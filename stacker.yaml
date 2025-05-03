@@ -22,12 +22,27 @@ stacks:
   # The 'name' and 'class_path' keys are required.
   # The 'name' value must be unique.
   # The 'class_path' points at a Python stacker "blueprint" class.
-  - name: touch-nothing
-    class_path: blueprints.touch.Touch
-
-    # in this case, if you look in the "blueprints" directory at the file "touch.py"
-    # you will see a Python class called "Touch".
-
-    # when we execute stacker with this `stack config`, it will automatically run the
-    # blueprint code to produce a CloudFormation JSON template, upload it to s3, and
-    # trigger a CloudFormation create/update.
+  - name: bastion
+    class_path: blueprints.bastion.Bastion
+    variables:
+      VpcId: ${vpcid}
+      DefaultSG: ${secgrpid}
+      PrivateSubnets:
+        - subnet-0db3e3841b2aceee4
+        - subnet-027c1767318b2cb66
+        - subnet-0337b02a88e814f8d
+      Environment: ${environment}
+      NamePrefix: ${name_prefix}
+      Tags:
+        ck-costcenter: ${cost_center}
+        ck-confidentiality: ${confidentiality}
+        ck-project: ${project}
+        ck-dataowners: ${data_owners}
+        ck-codeowners: ${code_owners}
+        ck-privacyreview: ${privacy_review}
+        ck-securityreview: ${security_review}
+        ck-projectowners: ${project_owners}
+        ck-dataregulations: ${data_regulations}
+        ck-availability: preemptible
+        ck-deployer: Stacker
+        ck-deletiondate: never
