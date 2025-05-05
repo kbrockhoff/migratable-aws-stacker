@@ -10,6 +10,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 stacker_blueprints = "^1.0.8"
+aws-cdk-lib = "^2.0.0"
+constructs = "^10.0.0"
 
 [poetry.group.dev.dependencies]
 nose = "^1.3"

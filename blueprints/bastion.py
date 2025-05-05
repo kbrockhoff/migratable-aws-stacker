@@ -7,19 +7,16 @@
 from troposphere import Ref, ec2, autoscaling, FindInMap, Output, kms, GetAtt, AWS_ACCOUNT_ID, Join, iam
 from troposphere.autoscaling import Tag as ASTag
 import boto3
+import base64
 
 from stacker.blueprints.base import Blueprint
 from stacker.blueprints.variables.types import (
-    CFNCommaDelimitedList,
     CFNNumber,
     CFNString,
-    EC2KeyPairKeyName,
     EC2SecurityGroupId,
     EC2SubnetIdList,
     EC2VPCId,
 )
-
-CLUSTER_SG_NAME = "BastionSecurityGroup"
 
 
 class Bastion(Blueprint):
@@ -35,9 +32,6 @@ class Bastion(Blueprint):
         "VpcId": {"type": EC2VPCId, "description": "Vpc Id"},
         "DefaultSG": {"type": EC2SecurityGroupId,
                       "description": "Top level security group."},
-        "PrivateSubnets": {"type": EC2SubnetIdList,
-                           "description": "Subnets to deploy private "
-                                          "instances in."},
         "InstanceType": {"type": CFNString,
                          "description": "EC2 Instance Type",
                          "default": "t3.micro"},
@@ -74,6 +68,7 @@ class Bastion(Blueprint):
 
     def create_security_groups(self, vpc_info):
         t = self.template
+        variables = self.get_variables()
         
         # Create security group rules based on VPC information
         sg_rules = []
@@ -101,19 +96,19 @@ class Bastion(Blueprint):
         # Create tags list from variables
         tags = []
         # Add default tags
-        for key, value in self.variables["Tags"].items():
+        for key, value in variables["Tags"].items():
             tags.append({"Key": key, "Value": value})
         # Add Name tag
         tags.append({
-            "Key": "Name", "Value": f"{self.variables['NamePrefix']}-sg",
-            "Key": "ck-environment", "Value": f"{self.variables['Environment']}"
+            "Key": "Name", "Value": f"{variables['NamePrefix']}-sg",
+            "Key": "ck-environment", "Value": f"{variables['Environment']}"
         })
         
         # Create the security group
         sg = t.add_resource(
             ec2.SecurityGroup(
-                f"{self.variables['NamePrefix']}-sg",
-                GroupDescription=f"Security group for {self.variables['NamePrefix']} bastion host.",
+                'BastionSecurityGroup',
+                GroupDescription=f"Security group for {variables['NamePrefix']} bastion host.",
                 SecurityGroupEgress=sg_rules,
                 VpcId=Ref("VpcId"),
                 Tags=tags
@@ -129,33 +124,34 @@ class Bastion(Blueprint):
             )
         )
 
-        # Add output for the security group ARN
+        # Add output for the security group name
         t.add_output(
             Output(
-                'SecurityGroupArn',
-                Description='The ARN of the bastion security group',
-                Value=GetAtt(sg, 'Arn')
+                'SecurityGroupName',
+                Description='The name of the bastion security group',
+                Value=GetAtt(sg, 'GroupName')
             )
         )
 
     def create_iam_role(self):
         t = self.template
+        variables = self.get_variables()
         
         # Create tags list from variables
         tags = []
         # Add default tags
-        for key, value in self.variables["Tags"].items():
+        for key, value in variables["Tags"].items():
             tags.append({"Key": key, "Value": value})
         # Add Name tag
         tags.append({
-            "Key": "Name", "Value": f"{self.variables['NamePrefix']}-role",
-            "Key": "ck-environment", "Value": f"{self.variables['Environment']}"
+            "Key": "Name", "Value": f"{variables['NamePrefix']}-role",
+            "Key": "ck-environment", "Value": f"{variables['Environment']}"
         })
 
         # Create IAM Role
         role = t.add_resource(
             iam.Role(
-                f"{self.variables['NamePrefix']}-role",
+                'BastionRole',
                 AssumeRolePolicyDocument={
                     "Version": "2012-10-17",
                     "Statement": [
@@ -172,7 +168,7 @@ class Bastion(Blueprint):
                     "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
                     "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
                 ],
-                Description=f"IAM role for {self.variables['NamePrefix']}",
+                Description=f"IAM role for {variables['NamePrefix']}",
                 Tags=tags,
                 Policies=[
                     iam.Policy(
@@ -201,7 +197,7 @@ class Bastion(Blueprint):
         # Create Instance Profile
         instance_profile = t.add_resource(
             iam.InstanceProfile(
-                f"{self.variables['NamePrefix']}-instance-profile",
+                'BastionInstanceProfile',
                 Roles=[Ref(role)],
                 Path="/"
             )
@@ -226,15 +222,17 @@ class Bastion(Blueprint):
 
     def create_kms_key(self):
         t = self.template
+        variables = self.get_variables()
+        
         # Create tags list from variables
         tags = []
         # Add default tags
-        for key, value in self.variables["Tags"].items():
+        for key, value in variables["Tags"].items():
             tags.append({"Key": key, "Value": value})
         # Add Name tag
         tags.append({
-            "Key": "Name", "Value": f"{self.variables['NamePrefix']}-ssm",
-            "Key": "ck-environment", "Value": f"{self.variables['Environment']}"
+            "Key": "Name", "Value": f"{variables['NamePrefix']}-ssm",
+            "Key": "ck-environment", "Value": f"{variables['Environment']}"
         })
 
         # Create KMS Key
@@ -270,8 +268,8 @@ class Bastion(Blueprint):
         # Create KMS Alias
         kms_alias = t.add_resource(
             kms.Alias(
-                "KMSAlias",
-                AliasName=f"alias/{self.variables['NamePrefix']}-ssm",
+                "BasitionKMSAlias",
+                AliasName=f"alias/{variables['NamePrefix']}-ssm",
                 TargetKeyId=Ref(kms_key)
             )
         )
@@ -295,14 +293,14 @@ class Bastion(Blueprint):
 
         t.add_output(
             Output(
-                "KMSAliasArn",
-                Description="The ARN of the KMS alias",
-                Value=GetAtt(kms_alias, "AliasArn")
+                "KMSAliasName",
+                Description="The name of the KMS alias",
+                Value=Ref(kms_alias)
             )
         )
 
     def generate_user_data(self):
-        return """#!/usr/bin/env bash
+        user_data = """#!/usr/bin/env bash
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
 ##
@@ -323,19 +321,27 @@ systemctl start amazon-ssm-agent
 systemctl status amazon-ssm-agent
 
 """
+        # Base64 encode the user data
+        return base64.b64encode(user_data.encode()).decode()
 
     def lookup_vpc_info(self):
         """Lookup VPC information for the specified VPC ID."""
         ec2_client = boto3.client('ec2')
         
         try:
+            # Get variables
+            variables = self.get_variables()
+            
+            # Get the actual VPC ID value
+            vpc_id = variables["VpcId"].to_parameter_value()
+            
             # Get VPC information
             vpc_response = ec2_client.describe_vpcs(
-                VpcIds=[f"{self.variables['VpcId']}"]
+                VpcIds=[vpc_id]
             )
             
             if not vpc_response['Vpcs']:
-                raise ValueError(f"VPC {self.variables['VpcId']} not found")
+                raise ValueError(f"VPC {vpc_id} not found")
             
             vpc = vpc_response['Vpcs'][0]
             
@@ -360,30 +366,32 @@ systemctl status amazon-ssm-agent
 
     def create_ec2_instance(self, vpc_info):
         t = self.template
+        variables = self.get_variables()
+        private_subnets = self.lookup_subnet_ids(vpc_info, 'private')
         
         # Create tags list from variables
         tags = []
         # Add default tags
-        for key, value in self.variables["Tags"].items():
+        for key, value in variables["Tags"].items():
             tags.append({"Key": key, "Value": value})
         # Add Name tag
         tags.append({
-            "Key": "Name", "Value": f"{self.variables['NamePrefix']}",
-            "Key": "ck-environment", "Value": f"{self.variables['Environment']}"
+            "Key": "Name", "Value": f"{variables['NamePrefix']}",
+            "Key": "ck-environment", "Value": f"{variables['Environment']}"
         })
 
         # Create EC2 Instance
         instance = t.add_resource(
             ec2.Instance(
-                f"{self.variables['NamePrefix']}",
+                'BastionInstance',
                 ImageId=FindInMap(
                     'AmiMap', Ref("AWS::Region"), Ref("ImageName")),
                 InstanceType=Ref("InstanceType"),
                 UserData=self.generate_user_data(),
-                SecurityGroupIds=[Ref(f"{self.variables['NamePrefix']}-sg")],
-                IamInstanceProfile=Ref(f"{self.variables['NamePrefix']}-instance-profile"),
+                SecurityGroupIds=[Ref('BastionSecurityGroup')],
+                IamInstanceProfile=Ref('BastionInstanceProfile'),
                 Tags=tags,
-                SubnetId=Ref("PrivateSubnets")[0]  # Use first private subnet
+                SubnetId=private_subnets[0]  # Use first private subnet
             )
         )
 
@@ -404,29 +412,41 @@ systemctl status amazon-ssm-agent
             )
         )
 
+    def lookup_subnet_ids(self, vpc_info, network_tag):
+        private_subnets = []
+        subnets_info = vpc_info['subnets']
+        for subnet in subnets_info:
+            tags = subnet['Tags']
+            # Find the tag with key 'ck-networktags'
+            network_tag_value = next((tag['Value'] for tag in tags if tag['Key'] == 'ck-networktags'), None)
+            if network_tag_value == network_tag:
+                private_subnets.append(subnet['SubnetId'])
+        return private_subnets
+
     def create_ebs_volume(self):
         t = self.template
+        variables = self.get_variables()
         
         # Create tags list from variables
         tags = []
         # Add default tags
-        for key, value in self.variables["Tags"].items():
+        for key, value in variables["Tags"].items():
             tags.append({"Key": key, "Value": value})
         # Add Name tag
         tags.append({
-            "Key": "Name", "Value": f"{self.variables['NamePrefix']}-volume",
-            "Key": "ck-environment", "Value": f"{self.variables['Environment']}"
+            "Key": "Name", "Value": f"{variables['NamePrefix']}-volume",
+            "Key": "ck-environment", "Value": f"{variables['Environment']}"
         })
 
         # Create encrypted EBS volume
         volume = t.add_resource(
             ec2.Volume(
-                f"{self.variables['NamePrefix']}-volume",
+                'BastionVolume',
                 Size=100,  # 100 GB
                 VolumeType="gp3",
                 Encrypted=True,
                 KmsKeyId=Ref("KMSKey"),
-                AvailabilityZone=GetAtt(f"{self.variables['NamePrefix']}", "AvailabilityZone"),
+                AvailabilityZone=GetAtt('BastionInstance', "AvailabilityZone"),
                 Tags=tags
             )
         )
@@ -434,9 +454,9 @@ systemctl status amazon-ssm-agent
         # Attach volume to instance
         t.add_resource(
             ec2.VolumeAttachment(
-                f"{self.variables['NamePrefix']}-volume-attachment",
+                'BastionVolumeAttachment',
                 Device="/dev/sdf",
-                InstanceId=Ref(f"{self.variables['NamePrefix']}"),
+                InstanceId=Ref('BastionInstance'),
                 VolumeId=Ref(volume)
             )
         )
@@ -450,7 +470,31 @@ systemctl status amazon-ssm-agent
             )
         )
 
+    def create_ami_mapping(self):
+        """Create the AMI mapping for different regions."""
+        t = self.template
+        
+        t.add_mapping('AmiMap', {
+            'us-east-1': {
+                'bastion': 'ami-0c7217cdde317cfec'  # Amazon Linux 2023 AMI
+            },
+            'us-east-2': {
+                'bastion': 'ami-0b0af3577fe5e3532'  # Amazon Linux 2023 AMI
+            },
+            'us-west-1': {
+                'bastion': 'ami-0d382e80be7ffdae5'  # Amazon Linux 2023 AMI
+            },
+            'us-west-2': {
+                'bastion': 'ami-0735c191cf914754d'  # Amazon Linux 2023 AMI
+            }
+        })
+
     def create_template(self):
+        t = self.template
+        
+        # Add AMI mapping
+        self.create_ami_mapping()
+        
         # Lookup VPC information
         vpc_info = self.lookup_vpc_info()
         
