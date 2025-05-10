@@ -1,0 +1,581 @@
+{
+    "Mappings": {
+        "AmiMap": {
+            "us-east-1": {
+                "bastion": "ami-0c7217cdde317cfec"
+            },
+            "us-east-2": {
+                "bastion": "ami-0b0af3577fe5e3532"
+            },
+            "us-west-1": {
+                "bastion": "ami-0d382e80be7ffdae5"
+            },
+            "us-west-2": {
+                "bastion": "ami-0735c191cf914754d"
+            }
+        }
+    },
+    "Outputs": {
+        "BastionInstanceProfileArn": {
+            "Description": "The ARN of the bastion instance profile",
+            "Value": {
+                "Fn::GetAtt": [
+                    "BastionInstanceProfile",
+                    "Arn"
+                ]
+            }
+        },
+        "BastionRoleArn": {
+            "Description": "The ARN of the bastion IAM role",
+            "Value": {
+                "Fn::GetAtt": [
+                    "BastionRole",
+                    "Arn"
+                ]
+            }
+        },
+        "InstanceId": {
+            "Description": "The ID of the EC2 instance",
+            "Value": {
+                "Ref": "BastionInstance"
+            }
+        },
+        "InstancePrivateIp": {
+            "Description": "The private IP address of the EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "BastionInstance",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "KMSAliasName": {
+            "Description": "The name of the KMS alias",
+            "Value": {
+                "Ref": "BasitionKMSAlias"
+            }
+        },
+        "KMSKeyArn": {
+            "Description": "The ARN of the KMS key",
+            "Value": {
+                "Fn::GetAtt": [
+                    "KMSKey",
+                    "Arn"
+                ]
+            }
+        },
+        "KMSKeyId": {
+            "Description": "The ID of the KMS key",
+            "Value": {
+                "Ref": "KMSKey"
+            }
+        },
+        "SecurityGroup": {
+            "Description": "The ID of the bastion security group",
+            "Value": {
+                "Ref": "BastionSecurityGroup"
+            }
+        },
+        "SecurityGroupName": {
+            "Description": "The name of the bastion security group",
+            "Value": {
+                "Fn::GetAtt": [
+                    "BastionSecurityGroup",
+                    "GroupName"
+                ]
+            }
+        },
+        "VolumeId": {
+            "Description": "The ID of the encrypted EBS volume",
+            "Value": {
+                "Ref": "BastionVolume"
+            }
+        }
+    },
+    "Parameters": {
+        "DefaultSG": {
+            "Description": "Top level security group.",
+            "Type": "AWS::EC2::SecurityGroup::Id"
+        },
+        "ImageName": {
+            "Default": "bastion",
+            "Description": "The image name to use from the AMIMap (usually found in the config file.)",
+            "Type": "String"
+        },
+        "InstanceType": {
+            "Default": "t3.micro",
+            "Description": "EC2 Instance Type",
+            "Type": "String"
+        },
+        "MaxSize": {
+            "Default": "5",
+            "Description": "Maximum # of instances.",
+            "Type": "Number"
+        },
+        "MinSize": {
+            "Default": "1",
+            "Description": "Minimum # of instances.",
+            "Type": "Number"
+        },
+        "VpcId": {
+            "Description": "Vpc Id",
+            "Type": "AWS::EC2::VPC::Id"
+        }
+    },
+    "Resources": {
+        "BasitionKMSAlias": {
+            "Properties": {
+                "AliasName": "alias/ck-demo-devblue-bastion-ssm",
+                "TargetKeyId": {
+                    "Ref": "KMSKey"
+                }
+            },
+            "Type": "AWS::KMS::Alias"
+        },
+        "BastionInstance": {
+            "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "BastionInstanceProfile"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AmiMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Ref": "ImageName"
+                        }
+                    ]
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "BastionSecurityGroup"
+                    }
+                ],
+                "SubnetId": "subnet-0db3e3841b2aceee4",
+                "Tags": [
+                    {
+                        "Key": "ck-costcenter",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-confidentiality",
+                        "Value": "confidential"
+                    },
+                    {
+                        "Key": "ck-project",
+                        "Value": "bkff-demo"
+                    },
+                    {
+                        "Key": "ck-dataowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-codeowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-privacyreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-securityreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-projectowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-dataregulations",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-availability",
+                        "Value": "preemptible"
+                    },
+                    {
+                        "Key": "ck-deployer",
+                        "Value": "Stacker"
+                    },
+                    {
+                        "Key": "ck-deletiondate",
+                        "Value": "never"
+                    },
+                    {
+                        "Key": "ck-environment",
+                        "Value": "development-blue"
+                    }
+                ],
+                "UserData": "IyEvdXNyL2Jpbi9lbnYgYmFzaApleGVjID4gPih0ZWUgL3Zhci9sb2cvdXNlci1kYXRhLmxvZyB8IGxvZ2dlciAtdCB1c2VyLWRhdGEgLXMgMj4vZGV2L2NvbnNvbGUpIDI+JjEKCiMjCiMjIFNldHVwIFNTSCBDb25maWcKIyMKY2F0IDw8Il9fRU9GX18iID4gL2hvbWUvZWMyLXVzZXIvLnNzaC9jb25maWcKSG9zdCAqCiAgICBTdHJpY3RIb3N0S2V5Q2hlY2tpbmcgbm8KX19FT0ZfXwpjaG1vZCA2MDAgL2hvbWUvZWMyLXVzZXIvLnNzaC9jb25maWcKY2hvd24gZWMyLXVzZXI6ZWMyLXVzZXIgL2hvbWUvZWMyLXVzZXIvLnNzaC9jb25maWcKCiMjCiMjIEVuYWJsZSBTU00KIyMKc3lzdGVtY3RsIGVuYWJsZSBhbWF6b24tc3NtLWFnZW50CnN5c3RlbWN0bCBzdGFydCBhbWF6b24tc3NtLWFnZW50CnN5c3RlbWN0bCBzdGF0dXMgYW1hem9uLXNzbS1hZ2VudAoK"
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "BastionInstanceProfile": {
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "BastionRole"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::InstanceProfile"
+        },
+        "BastionRole": {
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "Description": "IAM role for ck-demo-devblue-bastion",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+                    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+                ],
+                "Policies": [
+                    {
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "kms:Encrypt",
+                                        "kms:Decrypt",
+                                        "kms:ReEncrypt*",
+                                        "kms:GenerateDataKey*",
+                                        "kms:DescribeKey"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ],
+                            "Version": "2012-10-17"
+                        },
+                        "PolicyName": "KMSAccess"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "ck-costcenter",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-confidentiality",
+                        "Value": "confidential"
+                    },
+                    {
+                        "Key": "ck-project",
+                        "Value": "bkff-demo"
+                    },
+                    {
+                        "Key": "ck-dataowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-codeowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-privacyreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-securityreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-projectowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-dataregulations",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-availability",
+                        "Value": "preemptible"
+                    },
+                    {
+                        "Key": "ck-deployer",
+                        "Value": "Stacker"
+                    },
+                    {
+                        "Key": "ck-deletiondate",
+                        "Value": "never"
+                    },
+                    {
+                        "Key": "ck-environment",
+                        "Value": "development-blue"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::Role"
+        },
+        "BastionSecurityGroup": {
+            "Properties": {
+                "GroupDescription": "Security group for ck-demo-devblue-bastion host.",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "10.0.0.0/8",
+                        "FromPort": -1,
+                        "IpProtocol": "-1",
+                        "ToPort": -1
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 443,
+                        "IpProtocol": "tcp",
+                        "ToPort": 443
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "ck-costcenter",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-confidentiality",
+                        "Value": "confidential"
+                    },
+                    {
+                        "Key": "ck-project",
+                        "Value": "bkff-demo"
+                    },
+                    {
+                        "Key": "ck-dataowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-codeowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-privacyreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-securityreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-projectowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-dataregulations",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-availability",
+                        "Value": "preemptible"
+                    },
+                    {
+                        "Key": "ck-deployer",
+                        "Value": "Stacker"
+                    },
+                    {
+                        "Key": "ck-deletiondate",
+                        "Value": "never"
+                    },
+                    {
+                        "Key": "ck-environment",
+                        "Value": "development-blue"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VpcId"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "BastionVolume": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::GetAtt": [
+                        "BastionInstance",
+                        "AvailabilityZone"
+                    ]
+                },
+                "Encrypted": true,
+                "KmsKeyId": {
+                    "Ref": "KMSKey"
+                },
+                "Size": 100,
+                "Tags": [
+                    {
+                        "Key": "ck-costcenter",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-confidentiality",
+                        "Value": "confidential"
+                    },
+                    {
+                        "Key": "ck-project",
+                        "Value": "bkff-demo"
+                    },
+                    {
+                        "Key": "ck-dataowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-codeowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-privacyreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-securityreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-projectowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-dataregulations",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-availability",
+                        "Value": "preemptible"
+                    },
+                    {
+                        "Key": "ck-deployer",
+                        "Value": "Stacker"
+                    },
+                    {
+                        "Key": "ck-deletiondate",
+                        "Value": "never"
+                    },
+                    {
+                        "Key": "ck-environment",
+                        "Value": "development-blue"
+                    }
+                ],
+                "VolumeType": "gp3"
+            },
+            "Type": "AWS::EC2::Volume"
+        },
+        "BastionVolumeAttachment": {
+            "Properties": {
+                "Device": "/dev/sdf",
+                "InstanceId": {
+                    "Ref": "BastionInstance"
+                },
+                "VolumeId": {
+                    "Ref": "BastionVolume"
+                }
+            },
+            "Type": "AWS::EC2::VolumeAttachment"
+        },
+        "KMSKey": {
+            "Properties": {
+                "Description": "KMS key for SSM sessions",
+                "EnableKeyRotation": true,
+                "Enabled": true,
+                "KeyPolicy": {
+                    "Statement": [
+                        {
+                            "Action": "kms:*",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:iam::",
+                                            {
+                                                "Ref": "AWS::AccountId"
+                                            },
+                                            ":root"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "Resource": "*"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "KeySpec": "SYMMETRIC_DEFAULT",
+                "KeyUsage": "ENCRYPT_DECRYPT",
+                "MultiRegion": false,
+                "Origin": "AWS_KMS",
+                "Tags": [
+                    {
+                        "Key": "ck-costcenter",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-confidentiality",
+                        "Value": "confidential"
+                    },
+                    {
+                        "Key": "ck-project",
+                        "Value": "bkff-demo"
+                    },
+                    {
+                        "Key": "ck-dataowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-codeowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-privacyreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-securityreview",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-projectowners",
+                        "Value": "stackeragent@example.org"
+                    },
+                    {
+                        "Key": "ck-dataregulations",
+                        "Value": "N/A"
+                    },
+                    {
+                        "Key": "ck-availability",
+                        "Value": "preemptible"
+                    },
+                    {
+                        "Key": "ck-deployer",
+                        "Value": "Stacker"
+                    },
+                    {
+                        "Key": "ck-deletiondate",
+                        "Value": "never"
+                    },
+                    {
+                        "Key": "ck-environment",
+                        "Value": "development-blue"
+                    }
+                ]
+            },
+            "Type": "AWS::KMS::Key"
+        }
+    }
+} 

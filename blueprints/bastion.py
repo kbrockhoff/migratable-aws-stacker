@@ -5,7 +5,6 @@
 # another inside the VPC.
 
 from troposphere import Ref, ec2, autoscaling, FindInMap, Output, kms, GetAtt, AWS_ACCOUNT_ID, Join, iam
-from troposphere.autoscaling import Tag as ASTag
 import boto3
 import base64
 
@@ -13,8 +12,6 @@ from stacker.blueprints.base import Blueprint
 from stacker.blueprints.variables.types import (
     CFNNumber,
     CFNString,
-    EC2SecurityGroupId,
-    EC2SubnetIdList,
     EC2VPCId,
 )
 
@@ -30,8 +27,6 @@ class Bastion(Blueprint):
             "description": "Prefix for resource names (e.g., bkff-demo)",
         },
         "VpcId": {"type": EC2VPCId, "description": "Vpc Id"},
-        "DefaultSG": {"type": EC2SecurityGroupId,
-                      "description": "Top level security group."},
         "InstanceType": {"type": CFNString,
                          "description": "EC2 Instance Type",
                          "default": "t3.micro"},

@@ -26,11 +26,6 @@ stacks:
     class_path: blueprints.bastion.Bastion
     variables:
       VpcId: ${vpcid}
-      DefaultSG: ${secgrpid}
-      PrivateSubnets:
-        - subnet-0db3e3841b2aceee4
-        - subnet-027c1767318b2cb66
-        - subnet-0337b02a88e814f8d
       Environment: ${environment}
       NamePrefix: ${name_prefix}
       Tags:

@@ -10,8 +10,8 @@ endif
 	poetry install
 
 test:
-	poetry develop
-	poetry run python setup.py nosetests
+	poetry install --with dev
+	poetry run nosetests
 
 prod: setup
 	poetry run stacker build --region ${REGION} ${ARGS} conf/prod.env stacker.yaml
