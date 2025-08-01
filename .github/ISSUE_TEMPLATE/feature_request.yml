@@ -31,7 +31,7 @@ body:
     attributes:
       label: Proposed Solution
       description: How would you like this feature to work? Include any Terraform configuration examples if applicable.
-      render: hcl
+      render: yaml
       placeholder: |
         # Example of how the feature might work
         module "vpc" {
