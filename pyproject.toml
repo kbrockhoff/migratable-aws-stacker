@@ -16,7 +16,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
+stacker = "^2.0.0"
 stacker_blueprints = "^1.0.8"
+boto3 = "^1.26.0"
+troposphere = "^4.0.0"
 aws-cdk-lib = "^2.0.0"
 constructs = "^10.0.0"
 
