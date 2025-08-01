@@ -3,6 +3,7 @@ name = "migratable-aws-stacker"
 version = "0.1.0"
 description = "Provides a stacker project which can be used to test migrations to other infrastructure-as-code frameworks and languages."
 authors = [{ name = "Kevin Brockhoff", email = "kbrockhoff@codekaizen.org" }]
+requires-python = ">=3.9"
 
 [tool.poetry]
 name = "migratable-aws-stacker"
