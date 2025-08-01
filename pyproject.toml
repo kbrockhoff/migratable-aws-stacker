@@ -2,35 +2,25 @@
 name = "migratable-aws-stacker"
 version = "0.1.0"
 description = "Provides a stacker project which can be used to test migrations to other infrastructure-as-code frameworks and languages."
-authors = [{ name = "Kevin Brockhoff", email = "kbrockhoff@codekaizen.org" }]
-requires-python = ">=3.9"
-
-[tool.poetry]
-name = "migratable-aws-stacker"
-version = "0.1.0"
-description = ""
-authors = []
+readme = "README.md"
+license = { file = "LICENSE" }
+maintainers = [
+  { name = "Kevin Brockhoff", email = "kbrockhoff@codekaizen.org" }
+]
+requires-python = ">=3.9,<3.10"
 packages = [
     { include = "migratable_aws_stacker" }
 ]
-
-[tool.poetry.dependencies]
-python = "^3.9"
-stacker = "^2.0.0"
-stacker_blueprints = "^1.0.8"
-boto3 = "^1.26.0"
-troposphere = "^4.0.0"
-aws-cdk-lib = "^2.0.0"
-constructs = "^10.0.0"
-
-[tool.poetry.group.dev.dependencies]
-nose = "^1.3"
-mock = "^2.0"
-flake8 = "^3.5"
-setuptools = "^69.0.0"
-pytest = "^8.0.0"
+dependencies = [
+    "stacker>=1.7.2",
+    "stacker_blueprints>=1.0.8",
+    "boto3>=1.26.0",
+    "troposphere>=4.0.0",
+    "aws-cdk-lib>=2.0.0",
+    "constructs>=10.0.0",
+]
 
 [project.optional-dependencies]
 test = [
-  "pytest"
+  "pytest>=8.0.0"
 ]
