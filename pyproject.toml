@@ -25,3 +25,8 @@ mock = "^2.0"
 flake8 = "^3.5"
 setuptools = "^69.0.0"
 pytest = "^8.0.0"
+
+[project.optional-dependencies]
+test = [
+  "pytest"
+]
