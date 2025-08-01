@@ -31,7 +31,9 @@ This project adheres to a code of conduct. By participating, you are expected to
 ### Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.5
-- [Go](https://golang.org/dl/) >= 1.19 (for testing)
+- [Python](https://www.python.org/downloads/) >= 3.8
+- [uv](https://github.com/astral-sh/uv) (for dependency management)
+- [Stacker](https://stacker.readthedocs.io/en/latest/) >= 1.7
 - AWS CLI configured with appropriate credentials
 - Git
 
