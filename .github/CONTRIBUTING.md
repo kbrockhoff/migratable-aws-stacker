@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to this Terraform module! We welcome contributions from the community and appreciate your help in making this module better.
+Thank you for your interest in contributing to this Stacker project! We welcome contributions from the community and appreciate your help in making this project better.
 
 ## Table of Contents
 
