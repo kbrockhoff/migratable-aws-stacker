@@ -42,7 +42,8 @@ This project adheres to a code of conduct. By participating, you are expected to
 1. Clone your fork:
    ```bash
    git clone https://github.com/YOUR-USERNAME/terraform-aws-vpc.git
-   cd terraform-aws-vpc
+   git clone https://github.com/YOUR-USERNAME/migratable-aws-stacker.git
+   cd migratable-aws-stacker
    ```
 
 2. Create a new branch:
