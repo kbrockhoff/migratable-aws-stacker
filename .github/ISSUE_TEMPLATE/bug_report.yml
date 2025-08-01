@@ -52,7 +52,7 @@ body:
     attributes:
       label: Terraform Configuration
       description: Minimal Terraform configuration that reproduces the issue
-      render: hcl
+      render: yaml
       placeholder: |
         module "vpc" {
           source = "..."
