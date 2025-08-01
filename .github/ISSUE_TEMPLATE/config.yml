@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Terraform Documentation
+    url: https://www.terraform.io/docs
+  - name: Stacker Documentation
+    url: https://stacker.readthedocs.io/
+    about: Official Stacker documentation (Python-based CloudFormation)
+  - name: AWS Provider Documentation
+    url: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+  - name: AWS CloudFormation Documentation
+    url: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html
+    about: Official AWS CloudFormation documentation and resources

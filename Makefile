@@ -1,26 +1,26 @@
 REGION=us-east-1
 
 
-POETRY := $(shell command -v poetry 2> /dev/null)
+UV := $(shell command -v uv 2> /dev/null)
 
 setup:
-ifndef POETRY
-	$(error "poetry is not available, please install 'pip install poetry'")
+ifndef UV
+	$(error "uv is not available, please install from https://docs.astral.sh/uv/getting-started/installation/")
 endif
-	poetry install
+	uv sync --all-extras
 
 test:
-	poetry install --with dev
-	poetry run nosetests
+	uv sync --all-extras
+	uv run pytest tests/
 
 prod: setup
-	poetry run stacker build --region ${REGION} ${ARGS} conf/prod.env stacker.yaml
+	uv run stacker build --region ${REGION} ${ARGS} conf/prod.env stacker.yaml
 
 dev: setup
-	poetry run stacker build --region ${REGION} ${ARGS} conf/dev.env stacker.yaml
+	uv run stacker build --region ${REGION} ${ARGS} conf/dev.env stacker.yaml
 
 destroy-dev: setup
-	poetry run stacker destroy --region ${REGION} ${ARGS} conf/dev.env stacker.yaml
+	uv run stacker destroy --region ${REGION} ${ARGS} conf/dev.env stacker.yaml
 
 destroy-prod: setup
-	poetry run stacker destroy --region ${REGION} ${ARGS} conf/prod.env stacker.yaml
+	uv run stacker destroy --region ${REGION} ${ARGS} conf/prod.env stacker.yaml
